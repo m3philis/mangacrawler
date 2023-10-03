@@ -1,0 +1,3 @@
+[submodule "go-epub"]
+	path = go-epub
+	url = https://github.com/go-shiori/go-epub
