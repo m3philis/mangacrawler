@@ -72,7 +72,7 @@ func main() {
 			createepub.CreateEpub(mangapath, manga.Name, manga.ID)
 			fmt.Printf("EPUB created and saved under: %s\n\n", epubPath)
 		} else {
-			fmt.Print("EPUB exists already!\n\n")
+			fmt.Print("No update on manga, skipping epub creation!\n\n")
 		}
 
 		mangas[i] = manga
