@@ -8,6 +8,7 @@ import (
 	"mangacrawler/mangacrawler"
 	"net/http"
 	"os"
+  "os/exec"
 	"os/user"
 	"regexp"
 	"strings"
@@ -82,6 +83,17 @@ func CreateEpub(mangaPath string, mangaTitle string, mangaId string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+  fmt.Println("Adding EPUB to calibre DB")
+  cmd := exec.Command("calibredb", "add", "--automerge", "overwrite", strings.Join([]string{homepath.HomeDir, "mangas/EPUB", mangaTitle + ".epub"}, "/"))
+  var out strings.Builder
+  cmd.Stdout = &out
+  fmt.Println(cmd)
+  err = cmd.Run()
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Printf(out.String())
 
 }
 
