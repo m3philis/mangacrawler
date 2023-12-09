@@ -8,8 +8,7 @@ import (
 	"mangacrawler/mangacrawler"
 	"net/http"
 	"os"
-  "os/exec"
-	"os/user"
+	"os/exec"
 	"regexp"
 	"strings"
 
@@ -43,15 +42,11 @@ type MangaDesc struct {
 	En string `json:"en"`
 }
 
-func CreateEpub(mangaPath string, mangaTitle string, mangaId string) {
+func CreateEpub(mangaPath string, epubPath string, mangaTitle string, mangaId string) {
 	var author MangaPlus
 
 	url := "https://api.mangadex.org/manga/" + mangaId + "?includes[]=author&includes[]=cover_art"
 	data := mangacrawler.GetJson(url)
-	homepath, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
 
 	if err := json.Unmarshal(data, &author); err != nil {
 		panic(err)
@@ -69,7 +64,7 @@ func CreateEpub(mangaPath string, mangaTitle string, mangaId string) {
 	book := epub.NewEpub(mangaTitle)
 	book.SetAuthor(author.Data.Rels[0].Attributes.Name)
 	book.SetDescription(author.Data.Attr.Desc.En)
-	bookCss, _ := book.AddCSS(strings.Join([]string{homepath.HomeDir, "mangas/EPUB", "epub.css"}, "/"), "")
+	bookCss, _ := book.AddCSS(strings.Join([]string{epubPath, "epub.css"}, "/"), "")
 	bookCover, _ := book.AddImage(coverPath, coverFile)
 
 	book.SetCover(bookCover, "")
@@ -79,21 +74,22 @@ func CreateEpub(mangaPath string, mangaTitle string, mangaId string) {
 	addPages(book, mangaPath, bookCss)
 
 	fmt.Println("Writing EPUB to disk...")
-	err = book.Write(strings.Join([]string{homepath.HomeDir, "mangas/EPUB", mangaTitle + ".epub"}, "/"))
+	err := book.Write(strings.Join([]string{epubPath, mangaTitle + ".epub"}, "/"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-  fmt.Println("Adding EPUB to calibre DB")
-  cmd := exec.Command("calibredb", "add", "--automerge", "overwrite", strings.Join([]string{homepath.HomeDir, "mangas/EPUB", mangaTitle + ".epub"}, "/"))
-  var out strings.Builder
-  cmd.Stdout = &out
-  fmt.Println(cmd)
-  err = cmd.Run()
-  if err != nil {
-    log.Fatal(err)
-  }
-  fmt.Printf(out.String())
+	// TODO add check to skip calibre call if calibre not found
+	fmt.Println("Adding EPUB to calibre DB")
+	cmd := exec.Command("calibredb", "add", "--automerge", "overwrite", strings.Join([]string{epubPath, mangaTitle + ".epub"}, "/"))
+	var out strings.Builder
+	cmd.Stdout = &out
+	fmt.Println(cmd)
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf(out.String())
 
 }
 

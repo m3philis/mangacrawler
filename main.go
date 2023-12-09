@@ -15,12 +15,19 @@ import (
 
 func main() {
 	// get infos for the manga we want to download
+	var path string
 	var file string
 	var forceDl bool
 	var forceEpub bool
 	var mangas []mangacrawler.MangaYaml
 	var skipDl bool
 
+	homepath, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	flag.StringVar(&path, "path", homepath+"/mangas", "Path where to download mangas and create EPUBs in. (Default is ~/mangas)")
 	flag.BoolVar(&forceEpub, "force-epub", false, "Flag for creating an EPUB from the manga")
 	flag.BoolVar(&skipDl, "skip-download", false, "Flag for not downloading the manga")
 	flag.BoolVar(&forceDl, "force-download", false, "Download already downloaded chapters")
@@ -47,29 +54,24 @@ func main() {
 		}
 	}
 
-	homepath, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for i, manga := range mangas {
 		manga.Name, manga.Completed = mangacrawler.GetMangaInfo(manga)
 		var newChapter bool
 
-		mangapath := strings.Join([]string{homepath, "mangas/MangaDex", manga.Name}, "/")
-		os.MkdirAll(mangapath, 0755)
+		mangaPath := strings.Join([]string{path, "MangaDex", manga.Name}, "/")
+		os.MkdirAll(mangaPath, 0755)
 
 		if (!manga.Completed && !skipDl) || forceDl {
-			manga, newChapter = mangacrawler.GetManga(manga, mangapath, forceDl)
+			manga, newChapter = mangacrawler.GetManga(manga, mangaPath, forceDl)
 		} else if manga.Completed {
 			fmt.Print("  Manga already completed!\n\n")
 		}
 
-		if _, err := os.Stat(strings.Join([]string{homepath, "mangas/EPUB", manga.Name + ".epub"}, "/")); err != nil || forceEpub || newChapter {
-			epubPath := strings.Join([]string{homepath, "mangas/EPUB"}, "/")
+		if _, err := os.Stat(strings.Join([]string{path, "EPUB", manga.Name + ".epub"}, "/")); err != nil || forceEpub || newChapter {
+			epubPath := strings.Join([]string{path, "EPUB"}, "/")
 			os.MkdirAll(epubPath, 0755)
 			fmt.Println("Generating EPUB")
-			createepub.CreateEpub(mangapath, manga.Name, manga.ID)
+			createepub.CreateEpub(mangaPath, epubPath, manga.Name, manga.ID)
 			fmt.Printf("EPUB created and saved under: %s\n\n", epubPath)
 		} else {
 			fmt.Print("No update on manga, skipping epub creation!\n\n")
